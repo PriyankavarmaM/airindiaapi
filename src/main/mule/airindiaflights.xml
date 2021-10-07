@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="airindiaflightsFlow" doc:id="360c4308-9567-4b4c-91bd-45feb483c23a" >
+		<ee:transform doc:name="Transform Message" doc:id="6c34343a-db32-4c44-bbd9-38c9e90aa309" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://soap.training.mulesoft.com/
+---
+{
+	ns0#getFlights: {
+		from: attributes.queryParams.source as String,
+		to: attributes.queryParams.destination as String,
+		depatureDate: attributes.queryParams.doj as String
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="3d372ecb-bfcb-4994-924a-8b82cb8f4a53" message="request sent to airlines is.............#[payload]"/>
+		<wsc:consume operation="getFlights" doc:name="Consume" doc:id="50a7527b-bc8c-4be5-9cc8-67f8f3b76ddf" config-ref="Web_Service_Consumer_Config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1a900377-2388-43ee-b984-758c8ab0f7d3" message="Response from airindia is .............#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="8397bd20-93dd-429a-89f9-252e970155c8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://soap.training.mulesoft.com/
+---
+payload.body.ns0#getFlightsResponse.*return map ( return , indexOfReturn ) -> {
+	Id: return.ID default 0,
+	airlineName: return.airline default "",
+	fCode: return.flightCode default "",
+	fromAirportCode: return.fromAirportCode default "",
+	toAirportCode: return.toAirportCode default "",
+	departureDate: return.departureDate default "",
+	emptySeats: return.emptySeats default 0,
+	totalSeats: return.totalSeats as Number default 0,
+	price: return.price default 0,
+	planeType: return.planeType default ""
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="a829c280-a0a9-43ea-a2cb-9c565a505f1e" message="final response is #[payload]"/>
+	</flow>
+</mule>
